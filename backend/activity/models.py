@@ -5,10 +5,21 @@ from django.db import models
 
 
 class CaptchaType(models.Model):
-    type_name = models.CharField(max_length=50, unique=True)
+    TYPE_CHOICES = [
+        ("text", "数字字母混合"),
+        ("puzzle", "拼图"),
+        ("image_select", "图片选图"),
+        ("email", "邮箱验证码"),
+        ("sms", "短信验证码"),
+        ("slider", "滑块"),
+        ("audio", "语音验证码"),
+    ]
+
+    type_name = models.CharField(max_length=50, choices=TYPE_CHOICES, unique=True)
     description = models.TextField(blank=True)
     config_json = models.JSONField(default=dict, blank=True)
     image_path = models.CharField(max_length=255, blank=True)
+    is_default = models.BooleanField(default=False)
 
     class Meta:
         db_table = "captcha_types"
@@ -17,6 +28,11 @@ class CaptchaType(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.type_name
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            CaptchaType.objects.exclude(id=self.id).update(is_default=False)
+        super().save(*args, **kwargs)
 
 
 class SceneImage(models.Model):
@@ -53,3 +69,28 @@ class CaptchaLog(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.captcha_type} - {self.result}"
+
+
+class LoginRecord(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="login_records",
+    )
+    username = models.CharField(max_length=150)
+    ip_address = models.GenericIPAddressField(null=True, unpack_ipv4=True)
+    user_agent = models.CharField(max_length=200, blank=True)
+    success = models.BooleanField(default=True)
+    login_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "captcha_api_loginrecord"
+        verbose_name = "Login Record"
+        verbose_name_plural = "Login Records"
+        ordering = ["-login_time"]
+
+    def __str__(self) -> str:  # pragma: no cover - debugging helper
+        status = "成功" if self.success else "失败"
+        return f"{self.username} - {status}"

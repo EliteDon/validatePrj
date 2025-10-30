@@ -18,7 +18,15 @@
             <input type="range" min="0" max="200" v-model="answer" />
           </div>
         </div>
-        <div v-else-if="challenge.type === 'scene'" class="captcha-block">
+        <div v-else-if="challenge.type === 'puzzle'" class="captcha-block">
+          <p>拖动拼图块完成拼图</p>
+          <div class="slider">
+            <img :src="challenge.data.background" alt="拼图背景" />
+            <img v-if="challenge.data.piece" :src="challenge.data.piece" alt="拼图块" class="slider__piece" />
+            <input type="range" min="0" max="200" v-model="answer" />
+          </div>
+        </div>
+        <div v-else-if="challenge.type === 'image_select'" class="captcha-block">
           <p>请选择所有 {{ challenge.data.category }} 图片</p>
           <div class="grid">
             <label v-for="image in challenge.data.images" :key="image.id">
@@ -26,6 +34,11 @@
               <span>{{ image.file_path }}</span>
             </label>
           </div>
+        </div>
+        <div v-else-if="challenge.type === 'audio'" class="captcha-block">
+          <p>请听取语音内容并输入验证码</p>
+          <audio :src="challenge.data.audio" controls autoplay />
+          <input v-model="answer" placeholder="请输入语音中的数字" />
         </div>
         <div v-else>
           <p>未知的验证码类型</p>
@@ -60,7 +73,7 @@ export default {
       handler (value) {
         this.answer = ''
         this.sceneSelection = []
-        if (value && value.type === 'slider') {
+        if (value && (value.type === 'slider' || value.type === 'puzzle')) {
           this.answer = 0
         }
       },
@@ -70,9 +83,9 @@ export default {
   methods: {
     submit () {
       let resolved = this.answer
-      if (this.challenge?.type === 'slider') {
+      if (this.challenge?.type === 'slider' || this.challenge?.type === 'puzzle') {
         resolved = Number(this.answer)
-      } else if (this.challenge?.type === 'scene') {
+      } else if (this.challenge?.type === 'image_select') {
         resolved = this.sceneSelection
       }
       this.$emit('submit', resolved)

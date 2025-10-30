@@ -23,3 +23,27 @@ export async function login (payload) {
     throw error
   }
 }
+
+export async function sendEmailCode (payload) {
+  try {
+    const response = await http.post('/auth/send-email-code', payload)
+    return response
+  } catch (error) {
+    if (error && typeof error === 'object') {
+      return error
+    }
+    throw error
+  }
+}
+
+export async function sendSmsCode (payload) {
+  try {
+    const response = await http.post('/auth/send-sms-code', payload)
+    return response
+  } catch (error) {
+    if (error && typeof error === 'object') {
+      return error
+    }
+    throw error
+  }
+}
