@@ -24,7 +24,9 @@ def _parse_json(request):
 @require_GET
 def available(request):
     data = list(
-        CaptchaType.objects.values("id", "type_name", "description", "config_json", "image_path")
+        CaptchaType.objects.values(
+            "id", "type_name", "description", "config_json", "image_path", "is_default"
+        )
     )
     if not data:
         captcha_type = get_default_captcha_type()
@@ -35,6 +37,7 @@ def available(request):
                 "description": captcha_type.description,
                 "config_json": captcha_type.config_json,
                 "image_path": captcha_type.image_path,
+                "is_default": captcha_type.is_default,
             }
         ]
     return JsonResponse({"success": True, "data": data})
@@ -52,12 +55,25 @@ def request_captcha(request):
         challenge = CaptchaService.generate_text_captcha(length=length)
     elif captcha_type == "slider":
         challenge = CaptchaService.generate_slider_captcha()
-    elif captcha_type == "scene":
-        challenge = CaptchaService.generate_scene_selection()
+    elif captcha_type == "puzzle":
+        challenge = CaptchaService.generate_puzzle_captcha()
+    elif captcha_type == "image_select":
+        challenge = CaptchaService.generate_image_selection()
+    elif captcha_type == "audio":
+        config = payload.get("config", {})
+        length = int(config.get("length", 4))
+        challenge = CaptchaService.generate_audio_captcha(length=length)
     else:
         challenge = CaptchaService.generate_text_captcha()
 
-    return JsonResponse({"success": True, "data": challenge.data, "token": challenge.token, "type": challenge.type})
+    return JsonResponse(
+        {
+            "success": True,
+            "data": challenge.data,
+            "token": challenge.token,
+            "type": challenge.type,
+        }
+    )
 
 
 @csrf_exempt
@@ -93,6 +109,7 @@ def upsert_type(request):
         "description": payload.get("description", ""),
         "config_json": payload.get("config_json", {}),
         "image_path": payload.get("image_path", ""),
+        "is_default": payload.get("is_default", False),
     }
     if not defaults["type_name"]:
         return JsonResponse({"success": False, "message": "type_name 必填"}, status=400)
@@ -109,6 +126,7 @@ def upsert_type(request):
         "description": captcha_type.description,
         "config_json": captcha_type.config_json,
         "image_path": captcha_type.image_path,
+        "is_default": captcha_type.is_default,
     }})
 
 

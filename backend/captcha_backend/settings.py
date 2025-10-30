@@ -18,9 +18,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "accounts",
     "captcha_api",
     "activity",
+    "admin_api",
 ]
 
 MIDDLEWARE = [
@@ -117,3 +119,15 @@ SESSION_COOKIE_AGE = 60 * 60 * 2
 
 RATE_LIMIT_WINDOW = timedelta(minutes=1)
 RATE_LIMIT_MAX_REQUESTS = 10
+
+EMAIL_BACKEND = os.environ.get(
+    "DJANGO_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+
+REST_FRAMEWORK: Dict[str, Any] = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+}
